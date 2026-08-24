@@ -1,3 +1,5 @@
+// components/data-table/DataTablePagination.tsx
+
 "use client"
 
 import {

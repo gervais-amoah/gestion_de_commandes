@@ -85,7 +85,7 @@ export function DataTable<TData, TValue>({
               <TableRow key={`skeleton-${i}`}>
                 {Array.from({ length: columnCount }).map((_, j) => (
                   <TableCell key={j}>
-                    <Skeleton className="h-4 w-full max-w-[120px]" />
+                    <Skeleton className="h-4 w-full max-w-30" />
                   </TableCell>
                 ))}
               </TableRow>

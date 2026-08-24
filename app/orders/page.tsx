@@ -148,12 +148,9 @@ export default function OrdersPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-3xl font-bold">Commandes</h1>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              {total} commandes au total
-            </span>
             {isFetching && (
               <span className="text-sm text-muted-foreground">
-                (Mise à jour...)
+                Mise à jour...
               </span>
             )}
           </div>
