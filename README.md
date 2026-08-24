@@ -1,6 +1,6 @@
 # Order Management Dashboard
 
-A production-ready order management dashboard built with Next.js 14, TypeScript, and shadcn/ui.
+A production-ready order management dashboard built with Next.js 16, TypeScript, and shadcn/ui.
 
 ## Architecture Overview
 
@@ -12,15 +12,36 @@ TanStack Query handles all server state with a centralized query client. The `us
 
 ## Performance Optimization Strategy
 
-React Virtuoso provides virtualized rendering for the order list, supporting large datasets without performance degradation. Search is debounced (300ms) to reduce unnecessary API calls. React.memo optimizes OrderCard and OrderFilter components. TanStack Query caches responses with 30-second stale times, and pagination loads 10 orders at a time with infinite scroll or load-more functionality.
+TanStack Table provides a structured, highly optimized rendering surface for order data, supporting large datasets without performance degradation. Search is debounced (500ms) to reduce unnecessary API calls. `React.memo` isolates individual table cell components to prevent unnecessary re-renders during state changes. TanStack Query caches responses with 30-second stale times, and pagination handles data in standardized page chunks to simulate a real backend limit.
 
 ## Key Trade-offs Made Within 60-min Timeframe
 
 - **In-memory data** instead of a real database/API for rapid prototyping
 - **Client-side rendering** over SSR to avoid hydration complexity with dynamic data
-- **Mock data generation** (50 orders) balancing realism with performance
+- **Mock data generation** (1000 orders) balancing realism with performance
 - **Simplified error boundaries** without a dedicated fallback UI library
 - **Basic accessibility** meeting WCAG AA standards without full audit testing
+
+---
+
+## V2 Improvements (Current Branch)
+
+This version serves as an improved proof-of-concept over the initial v1 found on the `dev` branch.
+
+**UI/UX Overhaul:**
+
+- Replaced the vertical list of order cards with a standard data table (`@tanstack/react-table`). This provides a much more familiar and scannable interface for order management, allowing users to compare data vertically and visually parse large volumes of information faster.
+- Refined the overall UI styling, spacing, and component composition for a cleaner, more professional baseline.
+
+**Feature Additions:**
+
+- **Table Sorting:** Integrated column-level sorting (e.g., by Date, Total, Customer) directly into the table headers.
+- **Enhanced Filtering:** Transitioned from basic filters to dynamic status badges that display real-time record counts (e.g., "En cours (12)").
+- **Global Search:** Added a unified search bar capable of querying across Order ID, Customer Name, and Email simultaneously.
+
+**Localization Preparation:**
+
+- Core UI copy (headings, buttons, table headers, empty states) has been transitioned to French to align with the target production environment requirements.
 
 ---
 

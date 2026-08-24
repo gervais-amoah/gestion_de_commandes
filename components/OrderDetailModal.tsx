@@ -1,7 +1,7 @@
 // components/orders/order-detail-modal.tsx
 "use client"
 
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -23,7 +23,6 @@ import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import {
   Calendar,
-  Clock,
   CreditCard,
   Mail,
   Package,
@@ -33,6 +32,7 @@ import {
   X,
 } from "lucide-react"
 import { memo, useCallback } from "react"
+import { STATUS_CONFIG, StatusBadge } from "./orders/StatusBadge"
 
 interface OrderDetailModalProps {
   order: Order | null
@@ -40,32 +40,6 @@ interface OrderDetailModalProps {
   onClose: () => void
   onStatusChange: (orderId: string, status: OrderStatus) => void
   isUpdating: boolean
-}
-
-const STATUS_CONFIG: Record<
-  OrderStatus,
-  { icon: React.ReactNode; color: string; label: string }
-> = {
-  pending: {
-    icon: <Clock className="h-3 w-3" />,
-    color: "bg-amber-50 text-amber-600 border-amber-200",
-    label: "En attente",
-  },
-  processing: {
-    icon: <Package className="h-3 w-3" />,
-    color: "bg-blue-50 text-blue-600 border-blue-200",
-    label: "En traitement",
-  },
-  completed: {
-    icon: <Package className="h-3 w-3" />,
-    color: "bg-emerald-50 text-emerald-600 border-emerald-200",
-    label: "Terminée",
-  },
-  cancelled: {
-    icon: <X className="h-3 w-3" />,
-    color: "bg-rose-50 text-rose-600 border-rose-200",
-    label: "Annulée",
-  },
 }
 
 export const OrderDetailModal = memo(function OrderDetailModal({
@@ -85,29 +59,26 @@ export const OrderDetailModal = memo(function OrderDetailModal({
 
   if (!order) return null
 
-  const statusConfig = STATUS_CONFIG[order.status]
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-h-[90vh] w-full max-w-lg overflow-hidden p-0 sm:max-w-lg">
-        <DialogHeader className="relative border-b border-slate-100 px-6 py-5">
-          <div className="">
-            <DialogTitle className="text-2xl font-semibold tracking-tight text-slate-900">
+        {/* Custom Close Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 h-8 w-8 rounded-full hover:bg-slate-100"
+        >
+          <X className="h-4 w-4 text-slate-500" />
+          <span className="sr-only">Fermer</span>
+        </Button>
+
+        <DialogHeader className="border-b border-slate-100 px-6 py-5 pr-12">
+          <div className="flex items-center justify-between gap-4">
+            <DialogTitle className="text-xl font-semibold tracking-tight text-slate-900">
               Commande {order.id}
             </DialogTitle>
-          </div>
-
-          <div className="mt-3 flex items-center justify-between pr-10">
-            <Badge
-              variant="outline"
-              className={`${statusConfig.color} p-3 text-xs font-medium`}
-            >
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                {statusConfig.label}
-              </span>
-            </Badge>
-            <div className="text-right">
+            <div className="shrink-0 text-right">
               <p className="text-xs font-medium text-slate-500 uppercase">
                 Total
               </p>
@@ -115,6 +86,10 @@ export const OrderDetailModal = memo(function OrderDetailModal({
                 {formatCurrency(order.total)}
               </p>
             </div>
+          </div>
+
+          <div className="mt-3">
+            <StatusBadge status={order.status} variant="default" />
           </div>
         </DialogHeader>
 
@@ -149,7 +124,6 @@ export const OrderDetailModal = memo(function OrderDetailModal({
                   icon={<Calendar className="h-4 w-4 text-slate-400" />}
                   label="Date"
                 >
-                  {/* {formatDate(order.createdAt)} */}
                   {format(new Date(order.createdAt), "dd MMMM yyyy, HH:mm", {
                     locale: fr,
                   })}
@@ -172,15 +146,12 @@ export const OrderDetailModal = memo(function OrderDetailModal({
                 >
                   Livraison standard
                 </Row>
+
                 <Row
-                  icon={<Clock className="h-4 w-4 text-slate-400" />}
+                  icon={<Package className="h-4 w-4 text-slate-400" />}
                   label="Statut"
                 >
-                  <span
-                    className={`font-medium ${statusConfig.color.split(" ")[1]}`}
-                  >
-                    {statusConfig.label}
-                  </span>
+                  <StatusBadge status={order.status} variant="compact" />
                 </Row>
               </div>
             </div>
@@ -222,7 +193,7 @@ export const OrderDetailModal = memo(function OrderDetailModal({
               )}
             </div>
 
-            {/* Status Update Section (kept functional but styled minimally) */}
+            {/* Status Update Section */}
             <div className="rounded-xl border border-slate-200 bg-white p-4">
               <label className="mb-2 block text-xs font-medium tracking-wider text-slate-500 uppercase">
                 Mettre à jour le statut
@@ -262,7 +233,7 @@ export const OrderDetailModal = memo(function OrderDetailModal({
   )
 })
 
-// Helper component for detail rows to keep code clean
+// Helper component for detail rows
 function Row({
   icon,
   label,

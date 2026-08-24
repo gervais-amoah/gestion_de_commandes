@@ -3,19 +3,12 @@
 
 import { memo } from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import { Order, OrderStatus } from "@/lib/types"
-import { Badge } from "@/components/ui/badge"
+import { Order } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import { Eye } from "lucide-react"
-
-const statusColors: Record<OrderStatus, string> = {
-  pending: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-  processing: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  completed: "bg-green-500/10 text-green-500 border-blue-500/20", // Assuming green was intended here based on previous context
-  cancelled: "bg-red-500/10 text-red-500 border-red-500/20",
-}
+import { StatusBadge } from "./StatusBadge"
 
 // --- Memoized Cell Components ---
 
@@ -23,16 +16,13 @@ const IdCell = memo(function IdCell({ id }: { id: string }) {
   return <span className="text-sm font-semibold">{id}</span>
 })
 
+// ✅ Simplified: delegates entirely to StatusBadge
 const StatusCell = memo(function StatusCell({
   status,
 }: {
-  status: OrderStatus
+  status: Order["status"]
 }) {
-  return (
-    <Badge className={statusColors[status]}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </Badge>
-  )
+  return <StatusBadge status={status} variant="compact" />
 })
 
 const CustomerCell = memo(function CustomerCell({
