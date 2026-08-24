@@ -1,6 +1,6 @@
 import { Order, OrdersResponse } from "./types"
 
-// Generate mock orders
+// Generate 50 realistic mock orders - only runs on client
 const generateMockOrders = (count: number): Order[] => {
   const statuses: Order["status"][] = [
     "pending",
@@ -8,70 +8,128 @@ const generateMockOrders = (count: number): Order[] => {
     "completed",
     "cancelled",
   ]
-  const names = [
-    "John Doe",
-    "Jane Smith",
-    "Bob Johnson",
-    "Alice Brown",
-    "Charlie Wilson",
+  const firstNames = [
+    "John",
+    "Jane",
+    "Michael",
+    "Sarah",
+    "Robert",
+    "Emily",
+    "David",
+    "Lisa",
+    "James",
+    "Emma",
   ]
-  const cities = ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"]
-  const items = [
-    "Laptop",
-    "Phone",
-    "Headphones",
-    "Monitor",
-    "Keyboard",
-    "Mouse",
+  const lastNames = [
+    "Smith",
+    "Johnson",
+    "Williams",
+    "Brown",
+    "Jones",
+    "Garcia",
+    "Miller",
+    "Davis",
+    "Rodriguez",
+    "Martinez",
+  ]
+  const cities = [
+    "New York",
+    "Los Angeles",
+    "Chicago",
+    "Houston",
+    "Phoenix",
+    "Philadelphia",
+    "San Antonio",
+    "San Diego",
+    "Dallas",
+    "Austin",
+  ]
+  const productNames = [
+    "MacBook Pro",
+    "iPhone 15",
+    "AirPods Pro",
+    "iPad Air",
+    "Apple Watch",
+    "Samsung Galaxy",
+    "Sony Headphones",
+    "Dell XPS",
+    "LG Monitor",
+    "Logitech Mouse",
+  ]
+  const streets = [
+    "Main St",
+    "Park Ave",
+    "Broadway",
+    "5th Ave",
+    "Market St",
+    "Washington Ave",
+    "Oak St",
+    "Maple Dr",
+    "Cedar Ln",
+    "Pine St",
   ]
 
-  return Array.from({ length: count }, (_, i) => ({
-    id: `ORD-${String(i + 1).padStart(6, "0")}`,
-    customerName: names[Math.floor(Math.random() * names.length)] + ` ${i}`,
-    email: `customer${i}@example.com`,
-    total: Math.round((Math.random() * 500 + 20) * 100) / 100,
-    status: statuses[Math.floor(Math.random() * statuses.length)],
-    createdAt: new Date(
-      Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000
-    ).toISOString(),
-    items: Array.from(
-      { length: Math.floor(Math.random() * 3) + 1 },
-      (_, j) => ({
+  return Array.from({ length: count }, (_, i) => {
+    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)]
+    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)]
+    const status = statuses[Math.floor(Math.random() * statuses.length)]
+    const itemCount = Math.floor(Math.random() * 3) + 1
+
+    return {
+      id: `ORD-${String(i + 1).padStart(4, "0")}`,
+      customerName: `${firstName} ${lastName}`,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+      total: Math.round((Math.random() * 500 + 20) * 100) / 100,
+      status,
+      createdAt: new Date(
+        Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      items: Array.from({ length: itemCount }, (_, j) => ({
         id: `item-${i}-${j}`,
-        name: items[Math.floor(Math.random() * items.length)],
-        quantity: Math.floor(Math.random() * 5) + 1,
+        name: productNames[Math.floor(Math.random() * productNames.length)],
+        quantity: Math.floor(Math.random() * 3) + 1,
         price: Math.round((Math.random() * 100 + 10) * 100) / 100,
-      })
-    ),
-    shippingAddress: {
-      street: `${Math.floor(Math.random() * 1000)} Main St`,
-      city: cities[Math.floor(Math.random() * cities.length)],
-      state: "CA",
-      zipCode: `${Math.floor(Math.random() * 90000) + 10000}`,
-      country: "USA",
-    },
-  }))
+      })),
+      shippingAddress: {
+        street: `${Math.floor(Math.random() * 1000)} ${streets[Math.floor(Math.random() * streets.length)]}`,
+        city: cities[Math.floor(Math.random() * cities.length)],
+        state: ["CA", "NY", "TX", "FL", "IL", "WA", "MA", "PA", "OH", "GA"][
+          Math.floor(Math.random() * 10)
+        ],
+        zipCode: `${Math.floor(Math.random() * 90000) + 10000}`,
+        country: "USA",
+      },
+    }
+  })
 }
 
-// Store orders in memory
-const ALL_ORDERS = generateMockOrders(10000)
+// Store orders in memory - initialize empty, populate on first use
+let ALL_ORDERS: Order[] | null = null
+
+const getOrders = (): Order[] => {
+  if (!ALL_ORDERS) {
+    ALL_ORDERS = generateMockOrders(50)
+  }
+  return ALL_ORDERS
+}
 
 // Simulate API delay
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export const fetchOrders = async (
   page: number = 1,
-  limit: number = 50,
+  limit: number = 10,
   search?: string,
   statuses?: Order["status"][]
 ): Promise<OrdersResponse> => {
-  await delay(300) // Simulate network latency
+  await delay(500) // Simulate network latency
 
-  let filtered = ALL_ORDERS
+  const orders = getOrders()
+  let filtered = [...orders]
 
   // Apply search filter
-  if (search) {
-    const searchLower = search.toLowerCase()
+  if (search && search.trim()) {
+    const searchLower = search.toLowerCase().trim()
     filtered = filtered.filter(
       (order) =>
         order.customerName.toLowerCase().includes(searchLower) ||
@@ -92,11 +150,11 @@ export const fetchOrders = async (
 
   const total = filtered.length
   const start = (page - 1) * limit
-  const end = start + limit
-  const orders = filtered.slice(start, end)
+  const end = Math.min(start + limit, total)
+  const paginatedOrders = filtered.slice(start, end)
 
   return {
-    orders,
+    orders: paginatedOrders,
     total,
     page,
     totalPages: Math.ceil(total / limit),
@@ -107,8 +165,9 @@ export const updateOrderStatus = async (
   orderId: string,
   newStatus: Order["status"]
 ): Promise<Order> => {
-  await delay(200)
-  const order = ALL_ORDERS.find((o) => o.id === orderId)
+  await delay(300)
+  const orders = getOrders()
+  const order = orders.find((o) => o.id === orderId)
   if (!order) throw new Error("Order not found")
 
   order.status = newStatus

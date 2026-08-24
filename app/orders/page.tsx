@@ -1,16 +1,15 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useOrders } from "@/hooks/useOrders"
 import { OrderCard } from "@/components/OrderCard"
 import { OrderFilters } from "@/components/OrderFilters"
 import { OrderSkeleton } from "@/components/OrderSkeleton"
 import { OrderDetailModal } from "@/components/OrderDetailModal"
 import { Order } from "@/lib/types"
-import { Virtuoso, VirtuosoHandle } from "react-virtuoso"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, RefreshCw } from "lucide-react"
+import { AlertCircle, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
 
 export default function OrdersPage() {
   const {
@@ -25,7 +24,7 @@ export default function OrdersPage() {
     selectedStatuses,
     setSelectedStatuses,
     handleStatusChange,
-    loadMore,
+    goToPage, // <-- replaces loadMore; set current page directly
     clearFilters,
     isUpdating,
     refetch,
@@ -34,7 +33,6 @@ export default function OrdersPage() {
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const virtuosoRef = useRef<VirtuosoHandle>(null)
 
   const handleViewOrder = useCallback((order: Order) => {
     setSelectedOrder(order)
@@ -61,7 +59,14 @@ export default function OrdersPage() {
     refetch()
   }, [refetch])
 
-  // Loading state
+  const handlePrevPage = useCallback(() => {
+    if (currentPage > 1) goToPage(currentPage - 1)
+  }, [currentPage, goToPage])
+
+  const handleNextPage = useCallback(() => {
+    if (currentPage < totalPages) goToPage(currentPage + 1)
+  }, [currentPage, totalPages, goToPage])
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -74,7 +79,6 @@ export default function OrdersPage() {
     )
   }
 
-  // Error state with retry
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -95,7 +99,6 @@ export default function OrdersPage() {
     )
   }
 
-  // Empty state
   if (orders.length === 0 && !isFetching) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -130,7 +133,7 @@ export default function OrdersPage() {
     )
   }
 
-  // Main view with virtualized list
+  // Main view with classic pagination
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -159,55 +162,69 @@ export default function OrdersPage() {
       />
 
       <div className="mt-6">
-        {isFetching && orders.length === 0 ? (
+        {isFetching ? (
           <OrderSkeleton />
         ) : (
-          <Virtuoso
-            ref={virtuosoRef}
-            data={orders}
-            totalCount={total}
-            endReached={loadMore}
-            overscan={200}
-            components={{
-              Footer: () => {
-                if (currentPage < totalPages && !isFetching) {
-                  return (
-                    <div className="py-4 text-center">
-                      <Button
-                        variant="outline"
-                        onClick={loadMore}
-                        disabled={isFetching}
-                      >
-                        Load More
-                      </Button>
-                    </div>
-                  )
-                }
-                if (isFetching) {
-                  return (
-                    <div className="py-4">
-                      <OrderSkeleton />
-                    </div>
-                  )
-                }
-                if (currentPage >= totalPages && total > 0) {
-                  return (
-                    <div className="py-8 text-center text-muted-foreground">
-                      <p>You&apos;ve seen all {total} orders</p>
-                    </div>
-                  )
-                }
-                return null
-              },
-            }}
-            itemContent={(index, order) => (
-              <div className="mb-4">
-                <OrderCard order={order} onView={handleViewOrder} />
-              </div>
-            )}
-          />
+          <div className="space-y-4">
+            {orders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                onView={handleViewOrder}
+              />
+            ))}
+          </div>
         )}
       </div>
+
+      {/* Pagination footer */}
+      {totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePrevPage}
+            disabled={currentPage <= 1 || isFetching}
+          >
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            Previous
+          </Button>
+
+          <div className="mx-2 flex items-center gap-1">
+            {getPageNumbers(currentPage, totalPages).map((p, i) =>
+              p === "..." ? (
+                <span
+                  key={`ellipsis-${i}`}
+                  className="px-2 text-muted-foreground"
+                >
+                  …
+                </span>
+              ) : (
+                <Button
+                  key={p}
+                  variant={p === currentPage ? "default" : "outline"}
+                  size="sm"
+                  className="w-9"
+                  onClick={() => goToPage(p as number)}
+                  disabled={isFetching}
+                >
+                  {p}
+                </Button>
+              )
+            )}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleNextPage}
+            disabled={currentPage >= totalPages || isFetching}
+          >
+            Next
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       <OrderDetailModal
         order={selectedOrder}
@@ -218,4 +235,20 @@ export default function OrdersPage() {
       />
     </div>
   )
+}
+
+// Builds a compact page list like: 1 ... 4 5 [6] 7 8 ... 20
+function getPageNumbers(current: number, total: number): (number | "...")[] {
+  const delta = 1
+  const range: (number | "...")[] = []
+  const rangeStart = Math.max(2, current - delta)
+  const rangeEnd = Math.min(total - 1, current + delta)
+
+  range.push(1)
+  if (rangeStart > 2) range.push("...")
+  for (let i = rangeStart; i <= rangeEnd; i++) range.push(i)
+  if (rangeEnd < total - 1) range.push("...")
+  if (total > 1) range.push(total)
+
+  return range
 }

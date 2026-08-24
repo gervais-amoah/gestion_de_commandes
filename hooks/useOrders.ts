@@ -1,12 +1,12 @@
 "use client"
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { fetchOrders, updateOrderStatus } from "@/lib/api"
 import { Order, OrderStatus, OrdersResponse } from "@/lib/types"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useDebounce } from "./useDebounce"
 
-const PAGE_SIZE = 50
+const PAGE_SIZE = 10 // Show 10 orders per page for better pagination demo
 
 export function useOrders() {
   const [page, setPage] = useState(1)
@@ -87,9 +87,27 @@ export function useOrders() {
     }
   }
 
+  const goToPage = (newPage: number) => {
+    const maxPage = data?.totalPages ?? 1
+    const clamped = Math.min(Math.max(newPage, 1), maxPage)
+    setPage(clamped)
+  }
+
   const clearFilters = () => {
     setSearch("")
     setSelectedStatuses([])
+    setPage(1)
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
+  }
+
+  const handleStatusesChange = (
+    updater: OrderStatus[] | ((prev: OrderStatus[]) => OrderStatus[])
+  ) => {
+    setSelectedStatuses(updater)
     setPage(1)
   }
 
@@ -102,11 +120,12 @@ export function useOrders() {
     isFetching,
     error,
     search,
-    setSearch,
+    setSearch: handleSearchChange,
     selectedStatuses,
-    setSelectedStatuses,
+    setSelectedStatuses: handleStatusesChange,
     handleStatusChange,
     loadMore,
+    goToPage,
     clearFilters,
     isUpdating: statusMutation.isPending,
     refetch,
