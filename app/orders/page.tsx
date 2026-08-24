@@ -1,3 +1,4 @@
+// /app/orders/page.tsx
 "use client"
 
 import { OrderDetailModal } from "@/components/OrderDetailModal"
@@ -8,8 +9,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { useOrders } from "@/hooks/useOrders"
 import { Order } from "@/lib/types"
+import { getStatusCounts } from "@/lib/filters"
 import { AlertCircle, RefreshCw } from "lucide-react"
-import { useCallback, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 
 export default function OrdersPage() {
   const {
@@ -35,6 +37,9 @@ export default function OrdersPage() {
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // Memoize counts so we don't recalculate on every render unless orders change
+  const statusCounts = useMemo(() => getStatusCounts(orders), [orders])
 
   const handleViewOrder = useCallback((order: Order) => {
     setSelectedOrder(order)
@@ -63,8 +68,10 @@ export default function OrdersPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">Orders</h1>
-          <p className="text-muted-foreground">Loading your orders...</p>
+          <h1 className="text-3xl font-bold">Commandes</h1>
+          <p className="text-muted-foreground">
+            Chargement de vos commandes...
+          </p>
         </div>
         <OrdersTable
           orders={[]}
@@ -82,14 +89,15 @@ export default function OrdersPage() {
       <div className="container mx-auto px-4 py-8">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Failed to load orders</AlertTitle>
+          <AlertTitle>Échec du chargement</AlertTitle>
           <AlertDescription className="flex items-center gap-4">
             <span>
-              There was an error loading your orders. Please try again.
+              Une erreur s&apos;est produite lors du chargement de vos
+              commandes. Veuillez réessayer.
             </span>
             <Button variant="outline" size="sm" onClick={handleRetry}>
               <RefreshCw className="mr-2 h-4 w-4" />
-              Retry
+              Réessayer
             </Button>
           </AlertDescription>
         </Alert>
@@ -101,7 +109,7 @@ export default function OrdersPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">Orders</h1>
+          <h1 className="text-3xl font-bold">Commandes</h1>
         </div>
         <OrderFilters
           search={search}
@@ -110,20 +118,23 @@ export default function OrdersPage() {
           onStatusToggle={handleStatusToggle}
           onClearFilters={clearFilters}
           totalResults={total}
+          statusCounts={statusCounts}
         />
         <div className="mt-12 text-center">
           <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-muted">
             <AlertCircle className="h-10 w-10 text-muted-foreground" />
           </div>
-          <h3 className="mt-4 text-lg font-semibold">No orders found</h3>
+          <h3 className="mt-4 text-lg font-semibold">
+            Aucune commande trouvée
+          </h3>
           <p className="text-muted-foreground">
             {search || selectedStatuses.length > 0
-              ? "Try adjusting your filters to find what you're looking for."
-              : "No orders have been placed yet."}
+              ? "Essayez d'ajuster vos filtres pour trouver ce que vous cherchez."
+              : "Aucune commande n'a encore été passée."}
           </p>
           {(search || selectedStatuses.length > 0) && (
             <Button onClick={clearFilters} className="mt-4">
-              Clear Filters
+              Effacer les filtres
             </Button>
           )}
         </div>
@@ -135,14 +146,14 @@ export default function OrdersPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h1 className="text-3xl font-bold">Orders</h1>
+          <h1 className="text-3xl font-bold">Commandes</h1>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">
-              {total} total orders
+              {total} commandes au total
             </span>
             {isFetching && (
               <span className="text-sm text-muted-foreground">
-                (Updating...)
+                (Mise à jour...)
               </span>
             )}
           </div>
@@ -156,6 +167,7 @@ export default function OrdersPage() {
         onStatusToggle={handleStatusToggle}
         onClearFilters={clearFilters}
         totalResults={total}
+        statusCounts={statusCounts}
       />
 
       <div className="mt-6">

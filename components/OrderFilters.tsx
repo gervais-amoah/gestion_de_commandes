@@ -1,10 +1,11 @@
+// /components/OrderFilters.tsx
 "use client"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { X, Search, Filter } from "lucide-react"
-import { OrderStatus } from "@/lib/types"
+import { Search, Filter } from "lucide-react"
+import type { OrderStatus } from "@/lib/types"
 import { memo } from "react"
 
 interface OrderFiltersProps {
@@ -13,14 +14,15 @@ interface OrderFiltersProps {
   selectedStatuses: OrderStatus[]
   onStatusToggle: (status: OrderStatus) => void
   onClearFilters: () => void
+  statusCounts: Record<OrderStatus, number>
   totalResults: number
 }
 
-const statusOptions: OrderStatus[] = [
-  "pending",
-  "processing",
-  "completed",
-  "cancelled",
+const statusOptions: { value: OrderStatus; label: string }[] = [
+  { value: "pending", label: "En attente" },
+  { value: "processing", label: "En cours" },
+  { value: "completed", label: "Terminées" },
+  { value: "cancelled", label: "Annulées" },
 ]
 
 export const OrderFilters = memo(function OrderFilters({
@@ -29,9 +31,10 @@ export const OrderFilters = memo(function OrderFilters({
   selectedStatuses,
   onStatusToggle,
   onClearFilters,
+  statusCounts,
   totalResults,
 }: OrderFiltersProps) {
-  const hasFilters = search || selectedStatuses.length > 0
+  const isAllActive = selectedStatuses.length === 0
 
   return (
     <div className="space-y-4">
@@ -39,50 +42,63 @@ export const OrderFilters = memo(function OrderFilters({
         <div className="relative flex-1">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by name, email, or order ID..."
+            placeholder="Rechercher par nom, email ou ID..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9"
-            aria-label="Search orders"
+            className="h-full pl-9"
+            aria-label="Rechercher des commandes"
           />
         </div>
         <Button
           variant="outline"
           onClick={onClearFilters}
-          disabled={!hasFilters}
           className="whitespace-nowrap"
         >
-          <X className="mr-1 h-4 w-4" />
-          Clear Filters
+          <Filter className="mr-2 h-4 w-4" />
+          Vider les filtres
         </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Filter className="mr-1 h-4 w-4 text-muted-foreground" />
-        {statusOptions.map((status) => (
-          <Badge
-            key={status}
-            variant={selectedStatuses.includes(status) ? "default" : "outline"}
-            className="cursor-pointer capitalize transition-opacity hover:opacity-80"
-            onClick={() => onStatusToggle(status)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault()
-                onStatusToggle(status)
-              }
-            }}
-          >
-            {status}
-            {selectedStatuses.includes(status) && (
-              <X className="ml-1 h-3 w-3" />
-            )}
-          </Badge>
-        ))}
-        <span className="ml-2 text-sm text-muted-foreground">
-          {totalResults} {totalResults === 1 ? "order" : "orders"}
-        </span>
+        <Badge
+          variant={isAllActive ? "default" : "outline"}
+          className="cursor-pointer p-3 transition-opacity hover:opacity-80"
+          onClick={onClearFilters}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault()
+              onClearFilters()
+            }
+          }}
+        >
+          Toutes ({totalResults})
+        </Badge>
+
+        {statusOptions.map((option) => {
+          const isActive = selectedStatuses.includes(option.value)
+          const count = statusCounts[option.value] ?? 0
+
+          return (
+            <Badge
+              key={option.value}
+              variant={isActive ? "default" : "outline"}
+              className="cursor-pointer p-3 transition-opacity hover:opacity-80"
+              onClick={() => onStatusToggle(option.value)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault()
+                  onStatusToggle(option.value)
+                }
+              }}
+            >
+              {option.label} ({count})
+            </Badge>
+          )
+        })}
       </div>
     </div>
   )
