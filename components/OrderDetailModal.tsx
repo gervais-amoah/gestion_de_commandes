@@ -61,7 +61,8 @@ export const OrderDetailModal = memo(function OrderDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-3xl">
+      <DialogContent className="grid max-h-[90vh] max-w-3xl grid-rows-[auto_1fr] overflow-hidden">
+        {" "}
         <DialogHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <DialogTitle className="text-xl">Order {order.id}</DialogTitle>
@@ -75,8 +76,7 @@ export const OrderDetailModal = memo(function OrderDetailModal({
             </Badge>
           </div>
         </DialogHeader>
-
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea className="min-h-0 flex-1 pr-4">
           <div className="space-y-6">
             {/* Customer Info */}
             <div className="grid grid-cols-1 gap-4 rounded-lg bg-muted/50 p-4">
