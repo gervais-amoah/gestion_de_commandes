@@ -24,4 +24,4 @@ React Virtuoso provides virtualized rendering for the order list, supporting lar
 
 ---
 
-**Assistant**: Built with assistance from DeepSeek (deepseek.com)
+**Assistant**: Built with assistance from DeepSeek web (deepseek.com)
