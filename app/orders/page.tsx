@@ -1,15 +1,22 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
-import { useOrders } from "@/hooks/useOrders"
-import { OrderCard } from "@/components/OrderCard"
-import { OrderFilters } from "@/components/OrderFilters"
-import { OrderSkeleton } from "@/components/OrderSkeleton"
 import { OrderDetailModal } from "@/components/OrderDetailModal"
-import { Order } from "@/lib/types"
+import { OrderFilters } from "@/components/OrderFilters"
+import { OrderRow } from "@/components/OrderRow"
+import { OrderSkeleton } from "@/components/OrderSkeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { useOrders } from "@/hooks/useOrders"
+import { Order } from "@/lib/types"
+import { AlertCircle, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
+import { useCallback, useState } from "react"
 
 export default function OrdersPage() {
   const {
@@ -162,19 +169,33 @@ export default function OrdersPage() {
       />
 
       <div className="mt-6">
-        {isFetching ? (
-          <OrderSkeleton />
-        ) : (
-          <div className="space-y-4">
-            {orders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onView={handleViewOrder}
-              />
-            ))}
-          </div>
-        )}
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Order</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Items</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead className="w-[100px]" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isFetching ? (
+                <OrderSkeleton />
+              ) : (
+                orders.map((order) => (
+                  <OrderRow
+                    key={order.id}
+                    order={order}
+                    onView={handleViewOrder}
+                  />
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Pagination footer */}

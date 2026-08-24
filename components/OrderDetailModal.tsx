@@ -62,7 +62,6 @@ export const OrderDetailModal = memo(function OrderDetailModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="grid max-h-[90vh] max-w-3xl grid-rows-[auto_1fr] overflow-hidden">
-        {" "}
         <DialogHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <DialogTitle className="text-xl">Order {order.id}</DialogTitle>
