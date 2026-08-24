@@ -1,3 +1,5 @@
+// lib/types.ts
+
 export interface Order {
   id: string
   customerName: string
@@ -34,3 +36,6 @@ export interface OrdersResponse {
   page: number
   totalPages: number
 }
+
+export type SortDirection = "asc" | "desc"
+export type OrderSortColumn = "createdAt" | "total" | "status" | "customerName"

@@ -2,20 +2,13 @@
 
 import { OrderDetailModal } from "@/components/OrderDetailModal"
 import { OrderFilters } from "@/components/OrderFilters"
-import { OrderRow } from "@/components/OrderRow"
-import { OrderSkeleton } from "@/components/OrderSkeleton"
+import { OrdersTable } from "@/components/orders/OrdersTable"
+import { DataTablePagination } from "@/components/data-table/DataTablePagination"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { useOrders } from "@/hooks/useOrders"
 import { Order } from "@/lib/types"
-import { AlertCircle, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
+import { AlertCircle, RefreshCw } from "lucide-react"
 import { useCallback, useState } from "react"
 
 export default function OrdersPage() {
@@ -31,11 +24,13 @@ export default function OrdersPage() {
     selectedStatuses,
     setSelectedStatuses,
     handleStatusChange,
-    goToPage, // <-- replaces loadMore; set current page directly
+    goToPage,
     clearFilters,
     isUpdating,
     refetch,
     totalPages,
+    sorting,
+    setSorting,
   } = useOrders()
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
@@ -62,17 +57,7 @@ export default function OrdersPage() {
     [setSelectedStatuses]
   )
 
-  const handleRetry = useCallback(() => {
-    refetch()
-  }, [refetch])
-
-  const handlePrevPage = useCallback(() => {
-    if (currentPage > 1) goToPage(currentPage - 1)
-  }, [currentPage, goToPage])
-
-  const handleNextPage = useCallback(() => {
-    if (currentPage < totalPages) goToPage(currentPage + 1)
-  }, [currentPage, totalPages, goToPage])
+  const handleRetry = useCallback(() => refetch(), [refetch])
 
   if (isLoading) {
     return (
@@ -81,7 +66,13 @@ export default function OrdersPage() {
           <h1 className="text-3xl font-bold">Orders</h1>
           <p className="text-muted-foreground">Loading your orders...</p>
         </div>
-        <OrderSkeleton />
+        <OrdersTable
+          orders={[]}
+          isFetching
+          sorting={sorting}
+          onSortingChange={setSorting}
+          onView={handleViewOrder}
+        />
       </div>
     )
   }
@@ -140,7 +131,6 @@ export default function OrdersPage() {
     )
   }
 
-  // Main view with classic pagination
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -169,83 +159,23 @@ export default function OrdersPage() {
       />
 
       <div className="mt-6">
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead className="w-[100px]" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isFetching ? (
-                <OrderSkeleton />
-              ) : (
-                orders.map((order) => (
-                  <OrderRow
-                    key={order.id}
-                    order={order}
-                    onView={handleViewOrder}
-                  />
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        <OrdersTable
+          orders={orders}
+          isFetching={isFetching}
+          sorting={sorting}
+          onSortingChange={setSorting}
+          onView={handleViewOrder}
+        />
       </div>
 
-      {/* Pagination footer */}
-      {totalPages > 1 && (
-        <div className="mt-8 flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handlePrevPage}
-            disabled={currentPage <= 1 || isFetching}
-          >
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            Previous
-          </Button>
-
-          <div className="mx-2 flex items-center gap-1">
-            {getPageNumbers(currentPage, totalPages).map((p, i) =>
-              p === "..." ? (
-                <span
-                  key={`ellipsis-${i}`}
-                  className="px-2 text-muted-foreground"
-                >
-                  …
-                </span>
-              ) : (
-                <Button
-                  key={p}
-                  variant={p === currentPage ? "default" : "outline"}
-                  size="sm"
-                  className="w-9"
-                  onClick={() => goToPage(p as number)}
-                  disabled={isFetching}
-                >
-                  {p}
-                </Button>
-              )
-            )}
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleNextPage}
-            disabled={currentPage >= totalPages || isFetching}
-          >
-            Next
-            <ChevronRight className="ml-1 h-4 w-4" />
-          </Button>
-        </div>
-      )}
+      <div className="mt-8 flex justify-center">
+        <DataTablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={goToPage}
+          disabled={isFetching}
+        />
+      </div>
 
       <OrderDetailModal
         order={selectedOrder}
@@ -256,20 +186,4 @@ export default function OrdersPage() {
       />
     </div>
   )
-}
-
-// Builds a compact page list like: 1 ... 4 5 [6] 7 8 ... 20
-function getPageNumbers(current: number, total: number): (number | "...")[] {
-  const delta = 1
-  const range: (number | "...")[] = []
-  const rangeStart = Math.max(2, current - delta)
-  const rangeEnd = Math.min(total - 1, current + delta)
-
-  range.push(1)
-  if (rangeStart > 2) range.push("...")
-  for (let i = rangeStart; i <= rangeEnd; i++) range.push(i)
-  if (rangeEnd < total - 1) range.push("...")
-  if (total > 1) range.push(total)
-
-  return range
 }

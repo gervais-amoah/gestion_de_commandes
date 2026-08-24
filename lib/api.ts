@@ -1,4 +1,6 @@
-import { Order, OrdersResponse } from "./types"
+// lib/api.ts
+
+import { Order, OrderSortColumn, OrdersResponse, SortDirection } from "./types"
 
 // Generate 50 realistic mock orders - only runs on client
 const generateMockOrders = (count: number): Order[] => {
@@ -120,14 +122,15 @@ export const fetchOrders = async (
   page: number = 1,
   limit: number = 10,
   search?: string,
-  statuses?: Order["status"][]
+  statuses?: Order["status"][],
+  sortBy: OrderSortColumn = "createdAt",
+  sortDir: SortDirection = "desc"
 ): Promise<OrdersResponse> => {
-  await delay(500) // Simulate network latency
+  await delay(500)
 
   const orders = getOrders()
   let filtered = [...orders]
 
-  // Apply search filter
   if (search && search.trim()) {
     const searchLower = search.toLowerCase().trim()
     filtered = filtered.filter(
@@ -138,23 +141,34 @@ export const fetchOrders = async (
     )
   }
 
-  // Apply status filter
   if (statuses && statuses.length > 0) {
     filtered = filtered.filter((order) => statuses.includes(order.status))
   }
 
-  // Sort by createdAt descending (newest first)
-  filtered.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  )
+  const dir = sortDir === "asc" ? 1 : -1
+  filtered.sort((a, b) => {
+    switch (sortBy) {
+      case "total":
+        return (a.total - b.total) * dir
+      case "status":
+        return a.status.localeCompare(b.status) * dir
+      case "customerName":
+        return a.customerName.localeCompare(b.customerName) * dir
+      case "createdAt":
+      default:
+        return (
+          (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) *
+          dir
+        )
+    }
+  })
 
   const total = filtered.length
   const start = (page - 1) * limit
   const end = Math.min(start + limit, total)
-  const paginatedOrders = filtered.slice(start, end)
 
   return {
-    orders: paginatedOrders,
+    orders: filtered.slice(start, end),
     total,
     page,
     totalPages: Math.ceil(total / limit),
